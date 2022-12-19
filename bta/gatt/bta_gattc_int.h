@@ -14,6 +14,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
+ * ​​​​​Changes from Qualcomm Innovation Center are provided under the following license:
+ * Copyright (c) 2023 Qualcomm Innovation Center, Inc. All rights reserved.
+ * SPDX-License-Identifier: BSD-3-Clause-Clear
+ *
  ******************************************************************************/
 
 /******************************************************************************
@@ -446,6 +450,12 @@ extern BtaEnqueuedResult_t bta_gattc_enqueue(tBTA_GATTC_CLCB* p_clcb,
 extern bool bta_gattc_is_data_queued(tBTA_GATTC_CLCB* p_clcb,
                                      tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_continue(tBTA_GATTC_CLCB* p_clcb);
+extern void bta_gattc_send_mtu_response(tBTA_GATTC_CLCB* p_clcb,
+                                        const tBTA_GATTC_DATA* p_data,
+                                        uint16_t current_mtu);
+extern void bta_gattc_cmpl_sendmsg(uint16_t conn_id, tGATTC_OPTYPE op,
+                                   tGATT_STATUS status,
+                                   tGATT_CL_COMPLETE* p_data);
 
 extern bool bta_gattc_check_notif_registry(tBTA_GATTC_RCB* p_clreg,
                                            tBTA_GATTC_SERV* p_srcb,
