@@ -520,6 +520,16 @@ static const void* get_profile_interface(const char* profile_id) {
   return get_external_profile_interface(profile_id);
 }
 
+int dut_mode_configure(uint8_t enable) {
+  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  return BT_STATUS_SUCCESS;
+}
+
+int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
+  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  return BT_STATUS_SUCCESS;
+}
+
 int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
@@ -672,6 +682,9 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     pin_reply,
     ssp_reply,
     get_profile_interface,
+    dut_mode_configure,
+    dut_mode_send,
+    le_test_mode,
     set_os_callouts,
     read_energy_info,
     dump,
