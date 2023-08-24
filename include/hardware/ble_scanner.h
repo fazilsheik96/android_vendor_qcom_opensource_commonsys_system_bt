@@ -17,8 +17,13 @@
 #ifndef ANDROID_INCLUDE_BLE_SCANNER_H
 #define ANDROID_INCLUDE_BLE_SCANNER_H
 
+#include <bluetooth/uuid.h>
+#include <raw_address.h>
 #include <stdint.h>
+
+#include <memory>
 #include <vector>
+
 #include "bt_common_types.h"
 #include "bt_gatt_client.h"
 #include "bt_gatt_types.h"
@@ -33,15 +38,16 @@ typedef void (*batchscan_threshold_callback)(int client_if);
 
 /** Track ADV VSE callback invoked when tracked device is found or lost */
 typedef void (*track_adv_event_callback)(
-    btgatt_track_adv_info_t *p_track_adv_info);
+    btgatt_track_adv_info_t* p_track_adv_info);
 
 /** Callback for scan results */
 typedef void (*scan_result_callback)(uint16_t event_type, uint8_t addr_type,
-                                     RawAddress *bda, uint8_t primary_phy,
+                                     RawAddress* bda, uint8_t primary_phy,
                                      uint8_t secondary_phy,
                                      uint8_t advertising_sid, int8_t tx_power,
                                      int8_t rssi, uint16_t periodic_adv_int,
-                                     std::vector<uint8_t> adv_data);
+                                     std::vector<uint8_t> adv_data,
+                                     RawAddress* original_bda);
 
 typedef struct {
   scan_result_callback scan_result_cb;
@@ -50,28 +56,94 @@ typedef struct {
   track_adv_event_callback track_adv_event_cb;
 } btgatt_scanner_callbacks_t;
 
+class AdvertisingTrackInfo {
+ public:
+  // For MSFT-based advertisement monitor.
+  uint8_t monitor_handle;
+  uint8_t scanner_id;
+  uint8_t filter_index;
+  uint8_t advertiser_state;
+  uint8_t advertiser_info_present;
+  RawAddress advertiser_address;
+  uint8_t advertiser_address_type;
+  uint8_t tx_power;
+  int8_t rssi;
+  uint16_t time_stamp;
+  uint8_t adv_packet_len;
+  std::vector<uint8_t> adv_packet;
+  uint8_t scan_response_len;
+  std::vector<uint8_t> scan_response;
+};
+
+/**
+ * LE Scanning related callbacks invoked from from the Bluetooth native stack
+ * All callbacks are invoked on the JNI thread
+ */
+class ScanningCallbacks {
+ public:
+  virtual ~ScanningCallbacks() = default;
+  virtual void OnScannerRegistered(const bluetooth::Uuid app_uuid,
+                                   uint8_t scannerId, uint8_t status) = 0;
+  virtual void OnSetScannerParameterComplete(uint8_t scannerId,
+                                             uint8_t status) = 0;
+  virtual void OnScanResult(uint16_t event_type, uint8_t addr_type,
+                            RawAddress bda, uint8_t primary_phy,
+                            uint8_t secondary_phy, uint8_t advertising_sid,
+                            int8_t tx_power, int8_t rssi,
+                            uint16_t periodic_adv_int,
+                            std::vector<uint8_t> adv_data) = 0;
+  virtual void OnTrackAdvFoundLost(
+      AdvertisingTrackInfo advertising_track_info) = 0;
+  virtual void OnBatchScanReports(int client_if, int status, int report_format,
+                                  int num_records,
+                                  std::vector<uint8_t> data) = 0;
+  virtual void OnBatchScanThresholdCrossed(int client_if) = 0;
+  virtual void OnPeriodicSyncStarted(int reg_id, uint8_t status,
+                                     uint16_t sync_handle,
+                                     uint8_t advertising_sid,
+                                     uint8_t address_type, RawAddress address,
+                                     uint8_t phy, uint16_t interval) = 0;
+  virtual void OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_power,
+                                    int8_t rssi, uint8_t status,
+                                    std::vector<uint8_t> data) = 0;
+  virtual void OnPeriodicSyncLost(uint16_t sync_handle) = 0;
+  virtual void OnPeriodicSyncTransferred(int pa_source, uint8_t status,
+                                         RawAddress address) = 0;
+  virtual void OnBigInfoReport(uint16_t sync_handle, bool encrypted) = 0;
+};
+
 class BleScannerInterface {
  public:
   virtual ~BleScannerInterface() = default;
 
   using RegisterCallback =
-      base::Callback<void(uint8_t /* scanner_id */, uint8_t /* status */)>;
+      base::Callback<void(uint8_t /* scanner_id */, uint8_t /* btm_status */)>;
 
-  using Callback = base::Callback<void(uint8_t /* status */)>;
+  using Callback = base::Callback<void(uint8_t /* btm_status */)>;
 
   using EnableCallback =
-      base::Callback<void(uint8_t /* action */, uint8_t /* status */)>;
+      base::Callback<void(uint8_t /* action */, uint8_t /* btm_status */)>;
 
   using FilterParamSetupCallback =
       base::Callback<void(uint8_t /* avbl_space */, uint8_t /* action_type */,
-                          uint8_t /* status */)>;
+                          uint8_t /* btm_status */)>;
 
   using FilterConfigCallback =
       base::Callback<void(uint8_t /* filt_type */, uint8_t /* avbl_space */,
-                          uint8_t /* action */, uint8_t /* status */)>;
+                          uint8_t /* action */, uint8_t /* btm_status */)>;
+
+  using MsftAdvMonitorAddCallback =
+      base::Callback<void(uint8_t /* monitor_handle */, uint8_t /* status */)>;
+
+  using MsftAdvMonitorRemoveCallback =
+      base::Callback<void(uint8_t /* status */)>;
+
+  using MsftAdvMonitorEnableCallback =
+      base::Callback<void(uint8_t /* status */)>;
 
   /** Registers a scanner with the stack */
-  virtual void RegisterScanner(RegisterCallback) = 0;
+  virtual void RegisterScanner(const bluetooth::Uuid& app_uuid,
+                               RegisterCallback) = 0;
 
   /** Unregister a scanner from the stack */
   virtual void Unregister(int scanner_id) = 0;
@@ -95,8 +167,23 @@ class BleScannerInterface {
   /** Enable / disable scan filter feature*/
   virtual void ScanFilterEnable(bool enable, EnableCallback cb) = 0;
 
+  /** Is MSFT Extension supported? */
+  virtual bool IsMsftSupported() = 0;
+
+  /** Configures MSFT scan filter (advertisement monitor) */
+  virtual void MsftAdvMonitorAdd(MsftAdvMonitor monitor,
+                                 MsftAdvMonitorAddCallback cb) = 0;
+
+  /** Removes previously added MSFT scan filter */
+  virtual void MsftAdvMonitorRemove(uint8_t monitor_handle,
+                                    MsftAdvMonitorRemoveCallback cb) = 0;
+
+  /** Enable / disable MSFT scan filter feature */
+  virtual void MsftAdvMonitorEnable(bool enable,
+                                    MsftAdvMonitorEnableCallback cb) = 0;
+
   /** Sets the LE scan interval and window in units of N*0.625 msec */
-  virtual void SetScanParameters(int scan_phy, std::vector<uint32_t> scan_interval,
+  virtual void SetScanParameters(int scanner_id, std::vector<uint32_t> scan_interval,
                                  std::vector<uint32_t> scan_window,
                                  Callback cb) = 0;
 
@@ -125,26 +212,37 @@ class BleScannerInterface {
       base::Callback<void(uint16_t sync_handle, int8_t tx_power, int8_t rssi,
                           uint8_t status, std::vector<uint8_t> data)>;
   using SyncLostCb = base::Callback<void(uint16_t sync_handle)>;
-
   using BigInfoReportCb = base::Callback<void(uint16_t sync_handle, bool encrypted)>;
 
   virtual void StartSync(uint8_t sid, RawAddress address, uint16_t skip,
                          uint16_t timeout, StartSyncCb start_cb,
                          SyncReportCb report_cb, SyncLostCb lost_cb,
                          BigInfoReportCb biginfo_report_cb) = 0;
+
+  virtual void StartSync(uint8_t sid, RawAddress address, uint16_t skip,
+                         uint16_t timeout, int reg_id) = 0;
   virtual void StopSync(uint16_t handle) = 0;
-#if (BLE_PS_PAST_IF_SUPPORTED == TRUE)
+
+  virtual void RegisterCallbacks(ScanningCallbacks* callbacks) = 0;
+
   virtual void CancelCreateSync(uint8_t sid, RawAddress address) = 0;
+
   using SyncTransferCb =
-       base::Callback<void(uint8_t /*status*/, RawAddress /*addr*/)>;
+      base::Callback<void(uint8_t /*status*/, RawAddress /*addr*/)>;
 
   virtual void TransferSync(RawAddress address, uint16_t service_data,
-                         uint16_t sync_handle, SyncTransferCb cb) = 0;
+                            uint16_t sync_handle, SyncTransferCb cb) = 0;
   virtual void TransferSetInfo(RawAddress address, uint16_t service_data,
-                         uint8_t adv_handle, SyncTransferCb cb) = 0;
+                               uint8_t adv_handle, SyncTransferCb cb) = 0;
   virtual void SyncTxParameters(RawAddress addr, uint8_t mode, uint16_t skip,
-                                uint16_t timeout,StartSyncCb start_cb) = 0;
-#endif
+                                uint16_t timeout, StartSyncCb start_cb) = 0;
+
+  virtual void TransferSync(RawAddress address, uint16_t service_data,
+                            uint16_t sync_handle, int pa_source) = 0;
+  virtual void TransferSetInfo(RawAddress address, uint16_t service_data,
+                               uint8_t adv_handle, int pa_source) = 0;
+  virtual void SyncTxParameters(RawAddress addr, uint8_t mode, uint16_t skip,
+                                uint16_t timeout, int reg_id) = 0;
 };
 
 #endif /* ANDROID_INCLUDE_BLE_SCANNER_H */
