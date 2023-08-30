@@ -341,7 +341,11 @@ static bool lazy_initialize(void) {
   if (!timer_create_internal(CLOCK_ID, &timer)) goto error;
   timer_initialized = true;
 
-  if (!timer_create_internal(CLOCK_ID_ALARM, &wakeup_timer)) goto error;
+  if (!timer_create_internal(CLOCK_BOOTTIME_ALARM, &wakeup_timer)) {
+    if (!timer_create_internal(CLOCK_BOOTTIME, &wakeup_timer)) {
+      goto error;
+    }
+  }
   wakeup_timer_initialized = true;
 
   alarm_expired = semaphore_new(0);
