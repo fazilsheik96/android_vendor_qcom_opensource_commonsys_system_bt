@@ -5742,7 +5742,7 @@ void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
   } else {
     if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
       BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true,
-                     GATT_TRANSPORT_LE, true);
+                     BT_TRANSPORT_LE, true);
     } else {
       //TODO review. Kept qcom Specific change only.
       APPL_TRACE_DEBUG("btm_dm_start_gatt_discovery: ACL is disconnected");
@@ -6020,7 +6020,7 @@ static void bta_dm_le_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
         p_tmp_data.transport = BT_TRANSPORT_LE;
         bta_dm_le_gatt_cb.disc_progress = true;
         bta_dm_set_adv_audio_dev_info(&p_tmp_data);
-        bta_adv_audio_update_bond_db(bta_dm_le_gatt_cb.peer_address, GATT_TRANSPORT_LE);
+        bta_adv_audio_update_bond_db(bta_dm_le_gatt_cb.peer_address, BT_TRANSPORT_LE);
 
         if (p_data->search_cmpl.status == 0) {
           bta_get_adv_audio_role(bta_dm_le_gatt_cb.peer_address,
@@ -6078,7 +6078,7 @@ void bta_dm_gatt_le_services(RawAddress bd_addr) {
           bta_dm_le_gatt_cb.gatt_if = client_id;
           bta_dm_le_gatt_cb.disc_progress = true;
           BTA_GATTC_Open(client_id, bta_dm_le_gatt_cb.peer_address,
-                  true, GATT_TRANSPORT_LE, false);
+                  true, BT_TRANSPORT_LE, false);
         }
         }), false);
 

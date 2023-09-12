@@ -18,6 +18,7 @@
 #define ANDROID_INCLUDE_BT_HEARING_AID_H
 
 #include <hardware/bluetooth.h>
+#include <raw_address.h>
 
 namespace bluetooth {
 namespace hearing_aid {
@@ -59,7 +60,7 @@ class HearingAidInterface {
   /** Disconnect from Hearing Aid */
   virtual void Disconnect(const RawAddress& address) = 0;
 
-  /** Add a hearing aid device to white list */
+  /** Add a hearing aid device to acceptlist */
   virtual void AddToAcceptlist(const RawAddress& address) = 0;
 
   /** Set the volume */

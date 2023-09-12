@@ -16,6 +16,12 @@
 
 #pragma once
 
+#include <stddef.h>
+
+#include "bluetooth.h"
+#include "bluetooth/uuid.h"
+#include "raw_address.h"
+
 __BEGIN_DECLS
 
 #define BTSOCK_FLAG_ENCRYPT 1
@@ -26,62 +32,75 @@ __BEGIN_DECLS
 #define BTSOCK_FLAG_LE_COC (1 << 5)
 
 typedef enum {
-    BTSOCK_RFCOMM = 1,
-    BTSOCK_SCO = 2,
-    BTSOCK_L2CAP = 3,
-    BTSOCK_L2CAP_LE = 4
+  BTSOCK_RFCOMM = 1,
+  BTSOCK_SCO = 2,
+  BTSOCK_L2CAP = 3,
+  BTSOCK_L2CAP_LE = 4
 } btsock_type_t;
 
 /** Represents the standard BT SOCKET interface. */
 typedef struct {
-    short size;
-    RawAddress bd_addr;
-    int channel;
-    int status;
+  short size;
+  RawAddress bd_addr;
+  int channel;
+  int status;
 
-    // The writer must make writes using a buffer of this maximum size
-    // to avoid loosing data. (L2CAP only)
-    unsigned short max_tx_packet_size;
+  // The writer must make writes using a buffer of this maximum size
+  // to avoid loosing data. (L2CAP only)
+  unsigned short max_tx_packet_size;
 
-    // The reader must read using a buffer of at least this size to avoid
-    // loosing data. (L2CAP only)
-    unsigned short max_rx_packet_size;
+  // The reader must read using a buffer of at least this size to avoid
+  // loosing data. (L2CAP only)
+  unsigned short max_rx_packet_size;
 } __attribute__((packed)) sock_connect_signal_t;
 
 typedef struct {
-    /** set to size of this struct*/
-    size_t          size;
+  /** set to size of this struct*/
+  size_t size;
 
-    /**
-     * Listen to a RFCOMM UUID or channel. It returns the socket fd from which
-     * btsock_connect_signal can be read out when a remote device connected.
-     * If neither a UUID nor a channel is provided, a channel will be allocated
-     * and a service record can be created providing the channel number to
-     * create_sdp_record(...) in bt_sdp.
-     * The callingUid is the UID of the application which is requesting the socket. This is
-     * used for traffic accounting purposes.
-     */
-    bt_status_t (*listen)(btsock_type_t type, const char* service_name,
-            const bluetooth::Uuid* service_uuid, int channel, int* sock_fd, int flags, int callingUid);
+  /**
+   * Listen to a RFCOMM UUID or channel. It returns the socket fd from which
+   * btsock_connect_signal can be read out when a remote device connected.
+   * If neither a UUID nor a channel is provided, a channel will be allocated
+   * and a service record can be created providing the channel number to
+   * create_sdp_record(...) in bt_sdp.
+   * The callingUid is the UID of the application which is requesting the
+   * socket. This is used for traffic accounting purposes.
+   */
+  bt_status_t (*listen)(btsock_type_t type, const char* service_name,
+                        const bluetooth::Uuid* service_uuid, int channel,
+                        int* sock_fd, int flags, int callingUid);
 
-    /**
-     * Connect to a RFCOMM UUID channel of remote device, It returns the socket fd from which
-     * the btsock_connect_signal and a new socket fd to be accepted can be read out when connected.
-     * The callingUid is the UID of the application which is requesting the socket. This is
-     * used for traffic accounting purposes.
-     */
-    bt_status_t (*connect)(const RawAddress *bd_addr, btsock_type_t type, const bluetooth::Uuid* uuid,
-            int channel, int* sock_fd, int flags, int callingUid);
+  /**
+   * Connect to a RFCOMM UUID channel of remote device, It returns the socket fd
+   * from which the btsock_connect_signal and a new socket fd to be accepted can
+   * be read out when connected. The callingUid is the UID of the application
+   * which is requesting the socket. This is used for traffic accounting
+   * purposes.
+   */
+  bt_status_t (*connect)(const RawAddress* bd_addr, btsock_type_t type,
+                         const bluetooth::Uuid* uuid, int channel, int* sock_fd,
+                         int flags, int callingUid);
 
-    /**
-     * Set the LE Data Length value to this connected peer to the
-     * maximum supported by this BT controller. This command
-     * suggests to the BT controller to set its maximum transmission
-     * packet size.
-     */
-    void (*request_max_tx_data_length)(const RawAddress& bd_addr);
+  /**
+   * Set the LE Data Length value to this connected peer to the
+   * maximum supported by this BT controller. This command
+   * suggests to the BT controller to set its maximum transmission
+   * packet size.
+   */
+  void (*request_max_tx_data_length)(const RawAddress& bd_addr);
+
+  /**
+   * Send control parameters to the peer. So far only for qualification use.
+   * RFCOMM layer starts the control request only when it is the client.
+   * This API allows the host to start the control request while it works as an
+   * RFCOMM server.
+   */
+  bt_status_t (*control_req)(uint8_t dlci, const RawAddress& bd_addr,
+                             uint8_t modem_signal, uint8_t break_signal,
+                             uint8_t discard_buffers, uint8_t break_signal_seq,
+                             bool fc);
 
 } btsock_interface_t;
 
 __END_DECLS
-

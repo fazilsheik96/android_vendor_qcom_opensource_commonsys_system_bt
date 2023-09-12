@@ -355,7 +355,7 @@ static void btif_gatts_open_impl(int server_if, const RawAddress& address,
   } else {
     switch (device_type) {
       case BT_DEVICE_TYPE_BREDR:
-        transport = GATT_TRANSPORT_BR_EDR;
+        transport = GATT_TRANSPORT_BREDR;
         break;
 
       case BT_DEVICE_TYPE_BLE:
@@ -366,7 +366,7 @@ static void btif_gatts_open_impl(int server_if, const RawAddress& address,
         if (transport_param == GATT_TRANSPORT_LE)
           transport = GATT_TRANSPORT_LE;
         else
-          transport = GATT_TRANSPORT_BR_EDR;
+          transport = GATT_TRANSPORT_BREDR;
         break;
     }
   }
