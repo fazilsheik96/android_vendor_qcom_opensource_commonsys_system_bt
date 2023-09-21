@@ -217,7 +217,7 @@ class Callbacks {
    * @param pkt_status_in_hex recorded WBS packets' status in hex string.
    * @param pkt_status_in_binary recorde WBS packets' status in binary string.
    */
-  virtual void DebugDumpCallback(bool active, bool wbs,
+  virtual void DebugDumpCallback(bool active, uint16_t codec_id,
                                  int total_num_decoded_frames,
                                  double pkt_loss_ratio, uint64_t begin_ts,
                                  uint64_t end_ts, const char* pkt_status_in_hex,
