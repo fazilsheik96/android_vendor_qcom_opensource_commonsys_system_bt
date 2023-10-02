@@ -637,7 +637,6 @@ typedef struct {
   /* set to sizeof(bt_os_callouts_t) */
   size_t size;
 
-  set_wake_alarm_callout set_wake_alarm;
   acquire_wake_lock_callout acquire_wake_lock;
   release_wake_lock_callout release_wake_lock;
 } bt_os_callouts_t;
