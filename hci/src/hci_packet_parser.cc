@@ -213,7 +213,7 @@ static void parse_ble_read_offload_features_response(
 }
 static void parse_read_bd_addr_response(BT_HDR* response,
                                         RawAddress* address_ptr) {
-  uint8_t* stream = read_command_complete_header(
+  const uint8_t* stream = read_command_complete_header(
       response, HCI_READ_BD_ADDR, RawAddress::kLength /* bytes after */);
   CHECK(stream != NULL);
   STREAM_TO_BDADDR(*address_ptr, stream);
