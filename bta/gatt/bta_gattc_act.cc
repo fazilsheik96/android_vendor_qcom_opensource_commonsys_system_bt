@@ -820,7 +820,7 @@ void bta_gattc_set_discover_st(tBTA_GATTC_SERV* p_srcb) {
   uint8_t i;
 
   if (!interop_match_addr_or_name(INTEROP_DISABLE_LE_CONN_UPDATES, &p_srcb->server_bda)) {
-    L2CA_EnableUpdateBleConnParams(p_srcb->server_bda, false);
+    L2CA_LockBleConnParamsForServiceDiscovery(p_srcb->server_bda, true);
   }
 
   for (i = 0; i < BTA_GATTC_CLCB_MAX; i++) {
@@ -907,7 +907,7 @@ void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 void bta_gattc_start_discover_internal(tBTA_GATTC_CLCB* p_clcb) {
   if (p_clcb->transport == BT_TRANSPORT_LE) {
     if (!interop_match_addr_or_name(INTEROP_DISABLE_LE_CONN_UPDATES, &p_clcb->p_srcb->server_bda)) {
-      L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, false);
+      L2CA_LockBleConnParamsForServiceDiscovery(p_clcb->p_srcb->server_bda, true);
     }
   }
 
@@ -1009,7 +1009,7 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
     if (p_clcb->p_srcb &&
       (!interop_match_addr_or_name(INTEROP_DISABLE_LE_CONN_UPDATES,
           &p_clcb->p_srcb->server_bda))) {
-      L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, true);
+      L2CA_LockBleConnParamsForServiceDiscovery(p_clcb->p_srcb->server_bda, false);
     }
   }
 
