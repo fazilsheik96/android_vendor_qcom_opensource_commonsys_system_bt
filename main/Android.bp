@@ -149,8 +149,6 @@ cc_library_shared {
         "interop_database.conf",
         "bt_profile.conf",
         "libbt-hci_qti",
-        "libldacBT_enc",
-        "libldacBT_abr",
     ],
     cflags: [
         "-DBUILDCFG",
