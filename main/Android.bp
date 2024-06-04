@@ -89,7 +89,7 @@ cc_library_shared {
         "system/security/keystore/include",
         "hardware/interfaces/keymaster/4.0/support/include",
     ],
-    logtags: ["../EventLogTags.logtags"],
+    logtags: ["EventLogTags.logtags"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
         "android.hardware.bluetooth@1.1",
