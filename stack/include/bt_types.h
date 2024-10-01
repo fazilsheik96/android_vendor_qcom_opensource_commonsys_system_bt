@@ -746,7 +746,6 @@ typedef uint8_t tBLE_ADDR_TYPE;
 #define BT_TRANSPORT_INVALID 0
 #define BT_TRANSPORT_BR_EDR 1
 #define BT_TRANSPORT_LE 2
-typedef uint8_t tBT_TRANSPORT;
 
 /* QCM PHY state */
 #define QCM_PHY_STATE_BR_EDR 0
